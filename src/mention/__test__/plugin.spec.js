@@ -100,6 +100,14 @@ fdescribe('TinyMCE Plugin', () => {
     expect(editor.getContent()).toEqual('');
   });
 
+  fit('should perform intermediate actions', () => {
+    _performIntermediateActions(40, {
+      preventDefault() {
+        return false;
+      }
+    });
+  })
+
   // _performIntermediateActions
   // it('should validate key-presses and checks for intermediate actions', () => {
   //   store.dispatch(query('eric'));
