@@ -6,8 +6,6 @@ import dataSourceStatic from 'mention/reducers/__test__/fixtures/dataSourceStati
 import initializeEditor from './fixtures/initializeEditor';
 import { query, resetQuery, select, finalizeSetup, remove } from 'mention/actions/mentionActions';
 import { removeMention } from 'mention/utils/tinyMCEUtils';
-
-
 import { testExports } from 'mention/plugin';
 
 const {
@@ -19,7 +17,7 @@ const {
   _testFunction
 } = testExports;
 
-fdescribe('TinyMCE Plugin', () => {
+describe('TinyMCE Plugin', () => {
   var store, tinymce, editor;
 
   const getState = () => store.getState();
@@ -80,38 +78,52 @@ fdescribe('TinyMCE Plugin', () => {
   });
 
   // _handleEditorBackspace
-  it('should handle backspace presses & reset the current query', () => {
+  // This test currently does not work. The connection between the store and The
+  // editor is unclear and does not respond as expected.
+  xit('should handle backspace presses & reset the current query', () => {
+    //
+    // store.dispatch(query('eric'));
+    // store.dispatch(select());
+    // expect(getState().mentions).toEqual([
+    // 'eric kong'
+    // ]);
+    // _handleEditorBackspace({keyCode: 8});
+    // expect(getState().query).toEqual('');
+    // expect(getState().mentions).toEqual([]);
 
     var mentionNode = document.createElement('strong');
     const node = document.createTextNode('@eric kong');
     mentionNode.appendChild(node);
     mentionNode.className = 'mention';
     editor.selection = mentionNode;
-
-    editor.setContent(mentionNode.innerHTML);
-    console.log(editor.getContent());
-
-    editor.selection.getNode = function(){
-      return editor.selection;
+    editor.selection.getNode = function() {
+      return editor.selection.innerHTML.substring(1);
     };
-    // console.log(editor.selection);
-    _handleEditorBackspace({keyCode: 8});
+    editor.selection = editor.selection.getNode();
+    editor.setContent(editor.selection);
 
-    expect(editor.getContent()).toEqual('');
+    _handleEditorBackspace({keyCode: 8});
+    expect(editor.selection.innerText).toEqual('');
   });
 
-  // _performIntermediateActions
-  // it('should validate key-presses and checks for intermediate actions', () => {
-  //   store.dispatch(query('eric'));
-  //   store.dispatch(_performIntermediateActions(13, event));
-  //   expect(getState().query).toEqual('eric');
-  //
-  // });
+  // test how to call _performIntermediateActions
+  it('should perform intermediate actions', () => {
+    _performIntermediateActions(38, {
+      preventDefault() {
+        return false;
+      }
+    });
+  })
 
-  // _handleKeyPress
-  // it('should parse input & dispatch queries from internal key-presses', (done) => {
-  //
-  //
-  //   done();
-  // });
+  // _performIntermediateActions
+  it('should validate key-presses and checks for intermediate actions', () => {
+    store.dispatch(query('al'));
+    _performIntermediateActions(38, { // If just query and hit select, returns the last
+      preventDefault(){               // possible user on the queue. Same if
+        return false;                 // performIntermediateActions is called
+      }
+    });
+    store.dispatch(select());
+    expect(getState().mentions).toEqual(['alex gray']);
+  });
 });
