@@ -55,7 +55,7 @@ let isFocused = false;
 let store = null;
 
 
-export function initializePlugin(reduxStore, dataSource, delimiterConfig = delimiter) {
+export function initializePlugin(reduxStore, dataSource, delimiterConfig = delimiter, cb = () => {}) {
 
   invariant(reduxStore,
     'Plugin must be initialized with a Redux store.'
@@ -65,40 +65,38 @@ export function initializePlugin(reduxStore, dataSource, delimiterConfig = delim
     'Plugin must be initialized with a dataSource.  Datasource can be an array or promise.'
   );
 
-  return new Promise((resolve, reject) => {
+  if (typeof window.tinymce === 'undefined') {
+    return reject('Error initializing Mention plugin: `tinymce` is undefined.');
+  }
 
-    if (typeof window.tinymce === 'undefined') {
-      return reject('Error initializing Mention plugin: `tinymce` is undefined.');
-    }
+  window.tinymce.PluginManager.add('mention', (activeEditor) => {
+    editor = activeEditor;
+    store = Object.freeze(reduxStore);
+    delimiter = Object.freeze(delimiterConfig);
 
-    window.tinymce.PluginManager.add('mention', (activeEditor) => {
-      editor = activeEditor;
-      store = Object.freeze(reduxStore);
-      delimiter = Object.freeze(delimiterConfig);
-
-      // If promise, wait for it to resolve before resolving the
-      // outer promise and initializing the app.
-      if (typeof dataSource.then === 'function') {
-
-        dataSource.then(response => {
-          resolve({
-            editor,
-            resolvedDataSource: response.data
-          });
-
-          start();
-        }).catch(error => {
-          throw new Error(error);
-        });
-      } else {
-        resolve({
+    // If promise, wait for it to resolve before resolving the
+    // outer promise and initializing the app.
+    if (typeof dataSource.then === 'function') {
+      dataSource.then(response => {
+        cb({
           editor,
-          resolvedDataSource: dataSource
+          resolvedDataSource: response.data
         });
 
         start();
-      }
-    });
+
+      }).catch(error => {
+        throw new Error(error);
+      });
+
+    } else {
+      cb({
+        editor,
+        resolvedDataSource: dataSource
+      });
+
+      start();
+    }
   });
 }
 
